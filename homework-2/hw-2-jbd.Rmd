@@ -1,0 +1,9 @@
+---
+title: "Homework 2"
+author: "Joy Bao-Dai"
+output: pdf_document
+---
+
+### Figure 1
+
+### Table 2
