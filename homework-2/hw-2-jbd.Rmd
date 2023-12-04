@@ -11,6 +11,7 @@ library(ggplot2)
 library(dplyr)
 library(knitr)
 library(gridExtra)
+library(broom)
 ```
 
 ```{r load-data}
@@ -19,32 +20,32 @@ ddh <- read.csv("https://raw.githubusercontent.com/sta440-fa23/class-files/main/
 
 # Rename some variables
 ddh <- ddh %>%
-  mutate(delayed_fn = as.factor(delayed_fn))
+  mutate(delayed_fn_1 = as.factor(delayed_fn))
 
-levels(ddh$delayed_fn) <- c("IGF", "LGD")
+levels(ddh$delayed_fn_1) <- c("IGF", "LGD")
 
 # Look at data
-head(ddh)
+#head(ddh)
 ```
 
-### Figure 1
+### Figure 1: Deceased donor hyperglycemia and liver graft dysfunction
 
-```{r fig-1-twa, message=FALSE, warning=FALSE}
-
+```{r fig-1, message=FALSE, warning=FALSE}
 # Boxplot for TWA
 twa_plot <- ggplot(data=ddh,
-        mapping=aes(y=glutwa, x=delayed_fn, fill=delayed_fn)) +
+        mapping=aes(y=glutwa, x=delayed_fn_1, fill=delayed_fn_1)) +
       geom_boxplot() +
       xlab("TWA") + 
       ylab(NULL) +
       scale_x_discrete(limits=c("IGF", "LGD")) + 
       guides(fill=FALSE) +
       ylim(50, 500) +
-      theme_classic()
+      theme_classic() + 
+  scale_fill_manual(values=c("#FFFFFF", "#808080"))
 
 # Boxplot for Range
 range_plot <- ggplot(data=ddh,
-        mapping=aes(y=glurange, x=delayed_fn, fill=delayed_fn)) +
+        mapping=aes(y=glurange, x=delayed_fn_1, fill=delayed_fn_1)) +
       geom_boxplot() +
       xlab("Range") + 
       ylab(NULL) +
@@ -52,11 +53,12 @@ range_plot <- ggplot(data=ddh,
       guides(fill=FALSE) +
       ylim(1, 1000) +
       scale_y_log10() +
-      theme_classic()
+      theme_classic() + 
+  scale_fill_manual(values=c("#FFFFFF", "#808080"))
 
 # Boxplot for SD
 sd_plot <- ggplot(data=ddh,
-        mapping=aes(y=glusd, x=delayed_fn, fill=delayed_fn)) +
+        mapping=aes(y=glusd, x=delayed_fn_1, fill=delayed_fn_1)) +
       geom_boxplot() +
       xlab("SD") + 
       ylab(NULL) +
@@ -64,10 +66,165 @@ sd_plot <- ggplot(data=ddh,
       guides(fill=FALSE) +
   ylim(1, 300) +
   scale_y_log10() +
-  theme_classic()
+  theme_classic() + 
+  scale_fill_manual(values=c("#FFFFFF", "#808080"))
 
 # Print plots
 grid.arrange(twa_plot, range_plot, sd_plot, ncol = 3, top='Donor glucose measures, mg/dL')
 ```
 
 ### Table 2
+
+#### Primary exposure
+
+```{r table-2-primary}
+# Fit models
+unadjusted_model <- glm(delayed_fn ~ log(glutwa), 
+                        data = ddh, 
+                        family = "binomial")
+
+adjusted_model <- glm(delayed_fn ~ log(glutwa) + d_age + d_cod + r_meld_calc + hemo_instability, 
+                      data = ddh, 
+                      family = "binomial")
+
+unadjusted_results <- tidy(unadjusted_model)
+adjusted_results <- tidy(adjusted_model)
+
+# Function to calculate results
+calc_results <- function(coeff, a=0.05) {
+  alpha <- a
+  z_value <- qnorm(1 - alpha / 2)  # Calculate z-value for CI
+  
+  odds_ratio <- exp(coeff$estimate)
+  lower_ci <- exp(coeff$estimate - z_value * coeff$std.error)
+  upper_ci <- exp(coeff$estimate + z_value * coeff$std.error)
+  p_value <- coeff$p.value
+  
+  return(data.frame(Odds_Ratio = odds_ratio, Lower_CI = lower_ci, Upper_CI = upper_ci, P_Value = p_value))
+}
+
+# Format results
+unadj_twa <- unadjusted_results %>% 
+  filter(term == "log(glutwa)") %>% 
+  calc_results(a=0.05)
+adj_twa <- adjusted_results %>% 
+  filter(term == "log(glutwa)") %>% 
+  calc_results(a=0.05)
+
+# Make table
+results_table <- rbind(
+  data.frame(Exposure = "Time-weighted average", Model = "Unadjusted", unadj_twa),
+  data.frame(Exposure = "Time-weighted average", Model = "Adjusted", adj_twa)
+)
+
+results_table$CI <- paste0("(", results_table$Lower_CI, ", ", results_table$Upper_CI, ")")
+
+final_table <- results_table %>% 
+    select(Exposure, Model, Odds_Ratio, CI, P_Value)
+
+# Print the table
+kable(final_table, digits = 2)
+
+```
+
+#### Secondary exposure: Range
+
+```{r table-2-range}
+# Fit models
+unadjusted_model <- glm(delayed_fn ~ log(glurange), 
+                        data = ddh, 
+                        family = "binomial")
+
+adjusted_model <- glm(delayed_fn ~ log(glurange) + d_age + d_cod + r_meld_calc + hemo_instability, 
+                      data = ddh, 
+                      family = "binomial")
+
+unadjusted_results <- tidy(unadjusted_model)
+adjusted_results <- tidy(adjusted_model)
+
+# Function to calculate results
+calc_results <- function(coeff, a=0.05) {
+  alpha <- a
+  z_value <- qnorm(1 - alpha / 2)  # Calculate z-value for CI
+  
+  odds_ratio <- exp(coeff$estimate)
+  lower_ci <- exp(coeff$estimate - z_value * coeff$std.error)
+  upper_ci <- exp(coeff$estimate + z_value * coeff$std.error)
+  p_value <- coeff$p.value
+  
+  return(data.frame(Odds_Ratio = odds_ratio, Lower_CI = lower_ci, Upper_CI = upper_ci, P_Value = p_value))
+}
+
+# Format results
+unadj_twa <- unadjusted_results %>% 
+  filter(term == "log(glurange)") %>% 
+  calc_results(a=0.025)
+adj_twa <- adjusted_results %>% 
+  filter(term == "log(glurange)") %>% 
+  calc_results(a=0.025)
+
+# Make table
+results_table <- rbind(
+  data.frame(Exposure = "Range", Model = "Unadjusted", unadj_twa),
+  data.frame(Exposure = "Range", Model = "Adjusted", adj_twa)
+)
+
+results_table$CI <- paste0("(", results_table$Lower_CI, ", ", results_table$Upper_CI, ")")
+
+final_table <- results_table %>% 
+    select(Exposure, Model, Odds_Ratio, CI, P_Value)
+
+# Print the table
+kable(final_table, digits = 2)
+```
+
+#### Secondary exposure: SD
+
+```{r table-2-sd}
+# Fit models
+unadjusted_model <- glm(delayed_fn ~ log(glusd), 
+                        data = ddh, 
+                        family = "binomial")
+
+adjusted_model <- glm(delayed_fn ~ log(glusd) + d_age + d_cod + r_meld_calc + hemo_instability, 
+                      data = ddh, 
+                      family = "binomial")
+
+unadjusted_results <- tidy(unadjusted_model)
+adjusted_results <- tidy(adjusted_model)
+
+# Function to calculate results
+calc_results <- function(coeff, a=0.05) {
+  alpha <- a
+  z_value <- qnorm(1 - alpha / 2)  # Calculate z-value for CI
+  
+  odds_ratio <- exp(coeff$estimate)
+  lower_ci <- exp(coeff$estimate - z_value * coeff$std.error)
+  upper_ci <- exp(coeff$estimate + z_value * coeff$std.error)
+  p_value <- coeff$p.value
+  
+  return(data.frame(Odds_Ratio = odds_ratio, Lower_CI = lower_ci, Upper_CI = upper_ci, P_Value = p_value))
+}
+
+# Format results
+unadj_twa <- unadjusted_results %>% 
+  filter(term == "log(glusd)") %>% 
+  calc_results(a=0.025)
+adj_twa <- adjusted_results %>% 
+  filter(term == "log(glusd)") %>% 
+  calc_results(a=0.025)
+
+# Make table
+results_table <- rbind(
+  data.frame(Exposure = "SD", Model = "Unadjusted", unadj_twa),
+  data.frame(Exposure = "SD", Model = "Adjusted", adj_twa)
+)
+
+results_table$CI <- paste0("(", results_table$Lower_CI, ", ", results_table$Upper_CI, ")")
+
+final_table <- results_table %>% 
+    select(Exposure, Model, Odds_Ratio, CI, P_Value)
+
+# Print the table
+kable(final_table, digits = 2)
+```
