@@ -36,10 +36,11 @@ twa_plot <- ggplot(data=ddh,
         mapping=aes(y=glutwa, x=delayed_fn, fill=delayed_fn)) +
       geom_boxplot() +
       xlab("TWA") + 
-      ylab('Donor glucose measures, mg/dL') +
+      ylab(NULL) +
       scale_x_discrete(limits=c("IGF", "LGD")) + 
       guides(fill=FALSE) +
-      ylim(50, 500)
+      ylim(50, 500) +
+      theme_classic()
 
 # Boxplot for Range
 range_plot <- ggplot(data=ddh,
@@ -50,7 +51,8 @@ range_plot <- ggplot(data=ddh,
       scale_x_discrete(limits=c("IGF", "LGD")) + 
       guides(fill=FALSE) +
       ylim(1, 1000) +
-      scale_y_log10()
+      scale_y_log10() +
+      theme_classic()
 
 # Boxplot for SD
 sd_plot <- ggplot(data=ddh,
@@ -61,10 +63,11 @@ sd_plot <- ggplot(data=ddh,
       scale_x_discrete(limits=c("IGF", "LGD")) + 
       guides(fill=FALSE) +
   ylim(1, 300) +
-  scale_y_log10()
+  scale_y_log10() +
+  theme_classic()
 
 # Print plots
-grid.arrange(twa_plot, range_plot, sd_plot, ncol = 3)
+grid.arrange(twa_plot, range_plot, sd_plot, ncol = 3, top='Donor glucose measures, mg/dL')
 ```
 
 ### Table 2
