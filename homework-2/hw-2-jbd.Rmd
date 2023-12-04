@@ -4,6 +4,67 @@ author: "Joy Bao-Dai"
 output: pdf_document
 ---
 
+### Load data
+
+```{r load-packages, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(gridExtra)
+```
+
+```{r load-data}
+# Load data
+ddh <- read.csv("https://raw.githubusercontent.com/sta440-fa23/class-files/main/homework-2/ddh.csv", header=TRUE)
+
+# Rename some variables
+ddh <- ddh %>%
+  mutate(delayed_fn = as.factor(delayed_fn))
+
+levels(ddh$delayed_fn) <- c("IGF", "LGD")
+
+# Look at data
+head(ddh)
+```
+
 ### Figure 1
+
+```{r fig-1-twa, message=FALSE, warning=FALSE}
+
+# Boxplot for TWA
+twa_plot <- ggplot(data=ddh,
+        mapping=aes(y=glutwa, x=delayed_fn, fill=delayed_fn)) +
+      geom_boxplot() +
+      xlab("TWA") + 
+      ylab('Donor glucose measures, mg/dL') +
+      scale_x_discrete(limits=c("IGF", "LGD")) + 
+      guides(fill=FALSE) +
+      ylim(50, 500)
+
+# Boxplot for Range
+range_plot <- ggplot(data=ddh,
+        mapping=aes(y=glurange, x=delayed_fn, fill=delayed_fn)) +
+      geom_boxplot() +
+      xlab("Range") + 
+      ylab(NULL) +
+      scale_x_discrete(limits=c("IGF", "LGD")) + 
+      guides(fill=FALSE) +
+      ylim(1, 1000) +
+      scale_y_log10()
+
+# Boxplot for SD
+sd_plot <- ggplot(data=ddh,
+        mapping=aes(y=glusd, x=delayed_fn, fill=delayed_fn)) +
+      geom_boxplot() +
+      xlab("SD") + 
+      ylab(NULL) +
+      scale_x_discrete(limits=c("IGF", "LGD")) + 
+      guides(fill=FALSE) +
+  ylim(1, 300) +
+  scale_y_log10()
+
+# Print plots
+grid.arrange(twa_plot, range_plot, sd_plot, ncol = 3)
+```
 
 ### Table 2
