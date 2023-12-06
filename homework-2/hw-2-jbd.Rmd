@@ -4,6 +4,16 @@ author: "Joy Bao-Dai"
 output: pdf_document
 ---
 
+### Reflection
+
+This took me about 2-3 hours to reproduce. Overall, the data was pretty nice to work with and very clean already, with a relatively clear data dictionary attached. This was somewhat nicer than my expectations because I was expecting to have to deal with messy data. However, it didn't match my expectations in some ways because I wish that the methodology with fitting the models was described more clearly.
+
+Figure 1 was fairly straight forward, as it was more EDA-like. The only thing that was difficult there involved making sure that the y-axis was log-scaled for the range and SD variables.
+
+Table 2 was a different story, because it was hard to figure out exactly what the formulas were to fit the multinomial logistic regression models, as well as which transformations were used. For example, something that tripped me up was having to account for a "relative doubling" of the predictors by doing a log-transformation of the variables and then exponentiating and doubling the coefficient estimates to produce the final estimates and confidence intervals. By contrast, something that was clear and easy to follow was the researchers' decision to use a Bonferroni correction. I was able to include those easily, as it was clear how and where they included it.
+
+Another issue with Table 2 is that while I was able to reproduce the numbers for TWA and range, I was not able to reproduce the numbers for SD. Since I was able to produce the other intervals almost exactly (with some slight variation in the hundredths decimal place due to rounding), I think that the issue is not in my code but in the study results themselves, or there was a different formula used for the SD calculations that wasn't explicitly mentioned in the study.
+
 ### Load data
 
 ```{r load-packages, include=FALSE}
@@ -17,7 +27,9 @@ library(kableExtra)
 
 ```{r load-data}
 # Load data
-ddh <- read.csv("https://raw.githubusercontent.com/sta440-fa23/class-files/main/homework-2/ddh.csv", header=TRUE)
+ddh <- read.csv(
+  "https://raw.githubusercontent.com/sta440-fa23/class-files/main/homework-2/ddh.csv", 
+                header=TRUE)
 
 # Rename some variables
 ddh <- ddh %>%
